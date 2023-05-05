@@ -23,11 +23,6 @@ class sustocsv{
         try{
             System.out.print("読み込むファイル名: ");
             fi=new File(sc.next());
-
-
-            // fi=new File(sc.next()+".sus");
-
-            
             if(fi.exists()&&fi.isFile()&&fi.canRead()){
                 br=new BufferedReader(new FileReader(fi));
             }else{
@@ -36,11 +31,6 @@ class sustocsv{
             }
             System.out.print("書き出すファイル名: ");
             fo=new File(sc.next());
-
-
-            // fo=new File("../../Minge2023Spring_Team2/Minge2023Spring_Team2/Minge2023Spring_Team2/example/musics/test/a.csv");
-
-
             if(fo.exists()){
                 if(fo.isFile()&&fo.canWrite()){
                     pw=new PrintWriter(new BufferedWriter(new FileWriter(fo)));
@@ -58,8 +48,6 @@ class sustocsv{
             }
             if(br!=null&&pw!=null){
                 String s;
-                ArrayList<Double> measurel=new ArrayList<Double>();
-                int currentmeasure;
                 br.readLine();
                 br.readLine();
                 br.readLine();
@@ -69,33 +57,18 @@ class sustocsv{
                 br.readLine();
                 br.readLine();
                 br.readLine();
-                while(true){
-                    s=br.readLine();
-                    if(s.length()==0){
-                        break;
-                    }
-                    while(true){
-                        if(measurel.size()<(currentmeasure=Integer.parseInt(s.substring(1,4)))){
-                            measurel.add(4.0);
-                        }else{
-                            break;
-                        }
-                    }
-                    measurel.add(currentmeasure,Double.parseDouble(s.substring(7)));
-                }
+                br.readLine();
+                br.readLine();
                 br.skip(7);
                 double bpm=Double.parseDouble(br.readLine());
-                double offset=offsetms*bpm/(60.0);
-                if(offset!=0){
-                    offset*=-1;
-                }
+                double offset=offsetms*bpm/(60.0)*(-1);
                 br.readLine();
                 ArrayList<Integer> measure=new ArrayList<Integer>();
                 ArrayList<Integer> lane=new ArrayList<Integer>();
                 ArrayList<ArrayList<Integer>> wholedata=new ArrayList<ArrayList<Integer>>();
                 ArrayList<ArrayList<Double>> wholebeat=new ArrayList<ArrayList<Double>>();
                 int wholedatal=0;
-                double currentbeat=0;
+                double currentbeat;
                 while((s=br.readLine())!=null){
                     measure.add(Integer.parseInt(s.substring(1,4)));
                     lane.add(Integer.parseInt(s.substring(5,6),16)/2-1);
@@ -103,7 +76,7 @@ class sustocsv{
                     int datal=rawdata.length()/2;
                     ArrayList<Integer> data=new ArrayList<Integer>();
                     ArrayList<Double> beat=new ArrayList<Double>();
-                    currentmeasure=measure.get(measure.size()-1);
+                    currentbeat=measure.get(measure.size()-1)*4.0;
                     for(int i=0;i<datal;i++){
                         int currentdata=Integer.parseInt(rawdata.substring(i*2,i*2+1));
                         if(currentdata!=0){
@@ -114,7 +87,7 @@ class sustocsv{
                             }
                             beat.add(currentbeat);
                         }
-                        currentbeat+=measurel.get(currentmeasure)/datal;
+                        currentbeat+=4.0/datal;
                     }
                     wholedata.add(data);
                     wholebeat.add(beat);
