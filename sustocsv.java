@@ -21,10 +21,11 @@ class sustocsv{
         BufferedWriter bw=null;
         PrintWriter pw=null;
         try{
-            System.out.print("読み込むファイル名: ");
-            fi=new File(sc.next());
+            // System.out.print("読み込むファイル名: ");
+            // fi=new File(sc.next());
             // fi=new File("../sus/shining_star-2023-04-26T07-05-59.863Z.sus");
             // fi=new File("../sus/ssshining_star-2023-05-06T18-08-06.327Z.sus");
+            fi=new File("Untitled-2023-05-21T04-23-25.597Z.sus");            
 
             if(fi.exists()&&fi.isFile()&&fi.canRead()){
                 br=new BufferedReader(new FileReader(fi));
@@ -32,10 +33,10 @@ class sustocsv{
                 System.out.println("ファイルを読めません。");
                 System.exit(0);
             }
-            System.out.print("書き出すファイル名: ");
-            fo=new File(sc.next());
+            // System.out.print("書き出すファイル名: ");
+            // fo=new File(sc.next());
             // fo=new File("../../Minge2023Spring_Team2/Minge2023Spring_Team2/Minge2023Spring_Team2/example/musics/test/a.csv");
-            // fo=new File("b.csv");
+            fo=new File("a.csv");
 
             if(fo.exists()){
                 if(fo.isFile()&&fo.canWrite()){
@@ -74,10 +75,6 @@ class sustocsv{
                     measureandtime[1]=Double.parseDouble(s.substring(7));
                     wholemeasureandtime.add(measureandtime);
                 }
-                br.skip(7);
-                double bpm=Double.parseDouble(br.readLine());
-                double offset=offsetms*bpm/(60.0)*(-1);
-                br.readLine();
                 ArrayList<Integer> measure=new ArrayList<Integer>();
                 ArrayList<Integer> lane=new ArrayList<Integer>();
                 ArrayList<ArrayList<Integer>> wholedata=new ArrayList<ArrayList<Integer>>();
@@ -86,57 +83,98 @@ class sustocsv{
                 double currentbeat=0;
                 double addedbeat=0;
                 int wholemeasureandtimeindex=0;
+                ArrayList<Double> wholebpmlist=new ArrayList<Double>();
+                ArrayList<Integer> bpmmeasure=new ArrayList<Integer>();
+                ArrayList<Double> wholebpm=new ArrayList<Double>();
+                ArrayList<Double> wholebpmbeat=new ArrayList<Double>();
+                double currentbpmbeat=0;
+                int currentbpmmeasure=0;
+                wholebpmlist.add(0.0);
                 while((s=br.readLine())!=null){
-                    measure.add(Integer.parseInt(s.substring(1,4)));
-                    lane.add(Integer.parseInt(s.substring(5,6),16)/2-1);
-                    String rawdata=s.substring(7);
-                    int datal=rawdata.length()/2;
-                    ArrayList<Integer> data=new ArrayList<Integer>();
-                    ArrayList<Double> beat=new ArrayList<Double>();
-                    if(measure.size()>1&&measure.get(measure.size()-1)==measure.get(measure.size()-2)){
-                        currentbeat-=addedbeat;
-                    }
-                    addedbeat=0;
-                    for(int i=0;i<datal;i++){
-                        int currentdata=Integer.parseInt(rawdata.substring(i*2,i*2+1));
-                        if(currentdata!=0){
-                            switch(currentdata){
-                                case 1:
-                                    data.add(0);
-                                    break;
+                    if(s.substring(1,4).equals("BPM")){
+                        wholebpmlist.add(Double.parseDouble(s.substring(7)));
+                    }else if(s.substring(4,5).equals("0")){
+                        bpmmeasure.add(Integer.parseInt(s.substring(1,4)));
+                        String rawdata=s.substring(7);
+                        int datal=rawdata.length()/2;
+                        for(int i=0;i<datal;i++){
+                            int index=Integer.parseInt(rawdata.substring(i*2,i*2+2),36);
+                            if(index!=0){
+                                wholebpm.add(wholebpmlist.get(index));
+                                wholebpmbeat.add(currentbpmbeat);
                             }
-                            beat.add(currentbeat);
+                            if(wholemeasureandtimeindex<wholemeasureandtime.size()-1&&wholemeasureandtime.get(wholemeasureandtimeindex)[0]<bpmmeasure.get(bpmmeasure.size()-1)){
+                                wholemeasureandtimeindex++;
+                            }
+                            currentbpmbeat+=wholemeasureandtime.get(wholemeasureandtimeindex)[1]/datal;
                         }
-                        if(wholemeasureandtimeindex<wholemeasureandtime.size()-1&&wholemeasureandtime.get(wholemeasureandtimeindex)[0]<measure.get(measure.size()-1)){
-                            wholemeasureandtimeindex++;
+                    }else{
+                        measure.add(Integer.parseInt(s.substring(1,4)));
+                        lane.add(Integer.parseInt(s.substring(5,6),16)/2-1);
+                        String rawdata=s.substring(7);
+                        int datal=rawdata.length()/2;
+                        ArrayList<Integer> data=new ArrayList<Integer>();
+                        ArrayList<Double> beat=new ArrayList<Double>();
+                        if(measure.size()>1&&measure.get(measure.size()-1)==measure.get(measure.size()-2)){
+                            currentbeat-=addedbeat;
                         }
-                        currentbeat+=wholemeasureandtime.get(wholemeasureandtimeindex)[1]/datal;
-                        addedbeat+=wholemeasureandtime.get(wholemeasureandtimeindex)[1]/datal;
+                        addedbeat=0;
+                        for(int i=0;i<datal;i++){
+                            int currentdata=Integer.parseInt(rawdata.substring(i*2,i*2+1));
+                            if(currentdata!=0){
+                                switch(currentdata){
+                                    case 1:
+                                        data.add(0);
+                                        break;
+                                }
+                                beat.add(currentbeat);
+                            }
+                            if(wholemeasureandtimeindex<wholemeasureandtime.size()-1&&wholemeasureandtime.get(wholemeasureandtimeindex)[0]<measure.get(measure.size()-1)){
+                                wholemeasureandtimeindex++;
+                            }
+                            currentbeat+=wholemeasureandtime.get(wholemeasureandtimeindex)[1]/datal;
+                            addedbeat+=wholemeasureandtime.get(wholemeasureandtimeindex)[1]/datal;
+                        }
+                        wholedata.add(data);
+                        wholebeat.add(beat);
+                        wholedatal+=data.size();
                     }
-                    wholedata.add(data);
-                    wholebeat.add(beat);
-                    wholedatal+=data.size();
                 }
-                double[][] dataandbeatandlane=new double[wholedatal][3];
+                double offset=offsetms*wholebpmlist.get(1)/(60.0);
+                if(offset!=0){
+                    offset*=-1;
+                }
+                double[][] dataandbeatandlaneandbpm=new double[wholedatal][4];
                 int k=0;
                 for(int i=0;i<wholedata.size();i++){
                     for(int j=0;j<wholedata.get(i).size();j++){
-                        dataandbeatandlane[k][0]=wholedata.get(i).get(j);
-                        dataandbeatandlane[k][1]=wholebeat.get(i).get(j);
-                        dataandbeatandlane[k][2]=lane.get(i);
+                        dataandbeatandlaneandbpm[k][0]=wholedata.get(i).get(j);
+                        dataandbeatandlaneandbpm[k][1]=wholebeat.get(i).get(j);
+                        dataandbeatandlaneandbpm[k][2]=lane.get(i);
+                        boolean bpmassigned=false;
+                        for(int l=0;l<wholebpmbeat.size();l++){
+                            if(dataandbeatandlaneandbpm[k][1]==wholebpmbeat.get(l)){
+                                dataandbeatandlaneandbpm[k][3]=wholebpm.get(l);
+                                bpmassigned=true;
+                                break;
+                            }
+                        }
+                        if(!bpmassigned){
+                            dataandbeatandlaneandbpm[k][3]=0.0;//ソートされてから一つ前のbpmを入れるので一旦0.0
+                        }
                         k++;
                     }
                 }
-                Arrays.sort(dataandbeatandlane,(a,b)->Double.valueOf(a[1]).compareTo(Double.valueOf(b[1])));
+                Arrays.sort(dataandbeatandlaneandbpm,(a,b)->Double.valueOf(a[1]).compareTo(Double.valueOf(b[1])));
                 for(int i=wholedatal-1;i>0;i--){
-                    dataandbeatandlane[i][1]-=dataandbeatandlane[i-1][1];
+                    dataandbeatandlaneandbpm[i][1]-=dataandbeatandlaneandbpm[i-1][1];
                 }
-                dataandbeatandlane[0][1]=offset;
+                dataandbeatandlaneandbpm[0][1]=offset;
                 int i;
                 for(i=0;i<wholedatal-1;i++){
-                    pw.println((int)dataandbeatandlane[i][0]+","+dataandbeatandlane[i][1]+","+(int)dataandbeatandlane[i][2]+","+bpm);
+                    pw.println((int)dataandbeatandlaneandbpm[i][0]+","+dataandbeatandlaneandbpm[i][1]+","+(int)dataandbeatandlaneandbpm[i][2]+","+dataandbeatandlaneandbpm[i][3]);
                 }
-                pw.print((int)dataandbeatandlane[i][0]+","+dataandbeatandlane[i][1]+","+(int)dataandbeatandlane[i][2]+","+bpm);
+                pw.print((int)dataandbeatandlaneandbpm[i][0]+","+dataandbeatandlaneandbpm[i][1]+","+(int)dataandbeatandlaneandbpm[i][2]+","+dataandbeatandlaneandbpm[i][3]);
                 br.close();
                 pw.close();
             }
